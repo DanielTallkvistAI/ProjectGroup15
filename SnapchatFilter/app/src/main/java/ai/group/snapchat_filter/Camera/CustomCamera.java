@@ -184,8 +184,8 @@ public class CustomCamera implements CameraBridgeViewBase.CvCameraViewListener {
 
             for(Rect rect: faceDetections.toArray()){
 
-                double x1 = rect.x + (double) rect.width / 2 - 40;
-                double x2 = x1 + 80;
+                double x1 = rect.x + (double) rect.width / 2 - 80;
+                double x2 = x1 + 160;
                 double y1 = rect.y + (double) rect.height - (double) rect.height / 3.5;
                 double y2 = y1 + 10;
 
