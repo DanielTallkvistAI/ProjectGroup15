@@ -16,15 +16,6 @@
         android:id="@+id/camera_view_container" />
 
     <Button
-        android:id="@+id/button_start_camera"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/flip_camera"
-        android:onClick="flipCameraPosition"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <Button
         android:id="@+id/button_capture_camera"
         android:layout_width="200dp"
         android:layout_height="70dp"

@@ -2,9 +2,13 @@ package ai.group.snapchat_filter.Camera;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.view.ViewGroup;
 
+import org.opencv.objdetect.CascadeClassifier;
+
+import ai.group.snapchat_filter.R;
 import ai.group.snapchat_filter.Utils.Constants;
 
 public class CameraManager {
@@ -20,16 +24,17 @@ public class CameraManager {
     private ViewGroup displayView;
 
     private CustomCamera camera;
+    private CascadeClassifier mFaceDetector;
 
     public CameraManager(Context context, ViewGroup view){
-        this.internalInit(context, view, Constants.CameraPosition.Back);
+        this.internalInit(context, view, Constants.CameraPosition.Back, null);
     }
 
-    public CameraManager(Context context, ViewGroup view, Constants.CameraPosition cameraPosition){
-        this.internalInit(context, view, cameraPosition);
+    public CameraManager(Context context, ViewGroup view, Constants.CameraPosition cameraPosition, CascadeClassifier faceDetector){
+        this.internalInit(context, view, cameraPosition, faceDetector);
     }
 
-    private void internalInit(Context context, ViewGroup view, Constants.CameraPosition cameraPosition){
+    private void internalInit(Context context, ViewGroup view, Constants.CameraPosition cameraPosition, CascadeClassifier faceDetector){
 
         //Set context to the current fragment that created the camera manager
         this.mContext = context;
@@ -39,6 +44,9 @@ public class CameraManager {
 
         //set users preferred position of the camera when booting up
         this.preferredPosition = cameraPosition;
+
+        //Set face detection points
+        this.mFaceDetector = faceDetector;
 
         //Search the phone for available devices (eg. back and front camera)
         //Sets the preferred position based on which devices are found
@@ -100,7 +108,9 @@ public class CameraManager {
                 this.displayView,
                 this.preferredPosition == Constants.CameraPosition.Back ? this.backCameraOrientation : this.frontCameraOrientation,
                 this.preferredPosition,
-                true);
+                true,
+                mFaceDetector
+                );
 
     }
 

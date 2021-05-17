@@ -4,12 +4,12 @@
     <!-- Strings used for fragments for navigation -->
     <string name="menu_label">Menu</string>
     <string name="video_label">Video Fragment</string>
-    <string name="start_camera">Start Camera</string>
+    <string name="start_camera">Mustache Detector!</string>
     <string name="previous">Previous</string>
 
-    <string name="menu_fragment">This is the project for Group 15.Start the camera to begin! ;)</string>
+    <string name="menu_fragment">This is the project for Group 15.\nStart the camera to begin! ;)</string>
     <string name="video_fragment">Video Fragment</string>
 
     <string name="flip_camera">Flip Camera</string>
-    <string name="capture">Capture</string>
+    <string name="capture">Flip Camera</string>
 </resources>

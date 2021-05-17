@@ -9,14 +9,17 @@ import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfRect;
+import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.objdetect.CascadeClassifier;
 
 import ai.group.snapchat_filter.Utils.Constants;
 
-public class CustomCamera  implements CameraBridgeViewBase.CvCameraViewListener {
+public class CustomCamera implements CameraBridgeViewBase.CvCameraViewListener {
 
     private Mat mCapturedImage;
     private Mat mGray;
@@ -26,13 +29,15 @@ public class CustomCamera  implements CameraBridgeViewBase.CvCameraViewListener 
     public int cameraOrientation;
     private Constants.CameraPosition cameraPosition;
     public boolean usesGrayscale;
+    private CascadeClassifier mFaceDetector;
 
-    public CustomCamera(ViewGroup view, int orientation, Constants.CameraPosition position, boolean grayscale) {
+    public CustomCamera(ViewGroup view, int orientation, Constants.CameraPosition position, boolean grayscale, CascadeClassifier faceDetector) {
 
         this.displayView = view;
         this.cameraOrientation = orientation;
         this.cameraPosition = position;
         this.usesGrayscale = grayscale;
+        this.mFaceDetector = faceDetector;
 
         this.cameraView = new CustomCameraView(this.displayView.getContext(), this.cameraPosition.toInt(), this.cameraOrientation % 180 != 0);
         this.cameraView.setCvCameraViewListener(this);
@@ -171,6 +176,31 @@ public class CustomCamera  implements CameraBridgeViewBase.CvCameraViewListener 
                 break;
         }
 
+        //Here we can process mCapturedImage if we want a snapchat like view.
+        if(mFaceDetector != null){
+
+            MatOfRect faceDetections = new MatOfRect();
+            mFaceDetector.detectMultiScale(this.mCapturedImage, faceDetections);
+
+            for(Rect rect: faceDetections.toArray()){
+
+                double x1 = rect.x + (double) rect.width / 2 - 40;
+                double x2 = x1 + 80;
+                double y1 = rect.y + (double) rect.height - (double) rect.height / 3.5;
+                double y2 = y1 + 10;
+
+                Imgproc.rectangle(this.mCapturedImage,
+                        new Point(x1, y1),
+                        new Point(x2, y2),
+                        new Scalar(255, 255, 255, 1), 10
+                );
+
+            }
+
+        }
+
         return this.mCapturedImage;
     }
+
+
 }

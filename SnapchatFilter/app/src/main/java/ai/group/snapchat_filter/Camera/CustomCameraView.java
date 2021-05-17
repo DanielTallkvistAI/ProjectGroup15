@@ -1,6 +1,7 @@
 package ai.group.snapchat_filter.Camera;
 
 import android.content.Context;
+import android.hardware.Camera;
 
 import org.opencv.android.JavaCameraView;
 
