@@ -23,3 +23,14 @@ Steps:
 5. Select to debug on your device
 6. Run en enjoy!
 
+App
+------
+
+1. Open app "Snapchat Filter Group 15"
+2. Click on "Attach Yellow Mustache!"
+3. Accept the permission to use your camera.
+4. Camera starts
+5. Point at a face to give them a beautiful yellow mustache
+6. Flip the camera to selfie-mode by pressing on "Flip Camera"
+7. Go back to menu by using the phones back button.
+
