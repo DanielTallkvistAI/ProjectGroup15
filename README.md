@@ -1,7 +1,7 @@
 # ProjectGroup15
 Embedded and Distributed AI - Project Group 15
 
-Android app with a "Snapchat filter" like function that adds a Mustache.
+Android app with a "Snapchat filter" like function that adds a Mustache to your or other faces using your front or back camera.
 
 Using OpenCV and Haarcascade Classifiers
 
