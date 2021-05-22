@@ -1,6 +1,8 @@
 # ProjectGroup15
 Embedded and Distributed AI - Project Group 15
 
+Daniel Tallkvist & Bálint Sándor
+
 Android app with a "Snapchat filter" like function that adds a Mustache to your or other faces using your front or back camera.
 
 Using OpenCV and Haarcascade Classifiers
