@@ -3,7 +3,6 @@ package ai.group.snapchat_filter.Camera;
 import android.graphics.Bitmap;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
-
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -21,30 +20,157 @@ import ai.group.snapchat_filter.Utils.Constants;
 
 public class CustomCamera implements CameraBridgeViewBase.CvCameraViewListener {
 
+    //Current captured image as a OpenCV Mat (Matrix)
     private Mat mCapturedImage;
-    private Mat mGray;
 
+    //Content Container in Android view
     private ViewGroup displayView;
+
+    //Camera View with the camera
     private CustomCameraView cameraView;
+
+    //Orientation of the camera eg. 90 / 180 / 270
     public int cameraOrientation;
+
+    //Position of the camera front / rear
     private Constants.CameraPosition cameraPosition;
-    public boolean usesGrayscale;
+
+    //Face classifier
     private CascadeClassifier mFaceDetector;
 
-    public CustomCamera(ViewGroup view, int orientation, Constants.CameraPosition position, boolean grayscale, CascadeClassifier faceDetector) {
+    //Constructor
+    public CustomCamera(ViewGroup view, int orientation, Constants.CameraPosition position, CascadeClassifier faceDetector) {
 
         this.displayView = view;
         this.cameraOrientation = orientation;
         this.cameraPosition = position;
-        this.usesGrayscale = grayscale;
         this.mFaceDetector = faceDetector;
-
         this.cameraView = new CustomCameraView(this.displayView.getContext(), this.cameraPosition.toInt(), this.cameraOrientation % 180 != 0);
         this.cameraView.setCvCameraViewListener(this);
         this.cameraView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         this.cameraView.enableView();
-
         this.displayView.addView(cameraView);
+    }
+
+    // <---- CameraListener Overrides
+
+    @Override
+    public void onCameraViewStarted(int width, int height) {
+        this.mCapturedImage = new Mat(height, width, CvType.CV_8UC4, Scalar.all(0));
+    }
+
+    @Override
+    public void onCameraViewStopped() {
+        this.mCapturedImage.release();
+    }
+
+    //Callback for every camera frame
+    //Process the image and add a mustache.
+    @Override
+    public Mat onCameraFrame(Mat inputFrame) {
+
+        //Rotate input image
+        rotateImageByCamera(inputFrame);
+
+        //return result after finding a face and placing mustache on the correct spot
+        return findFacesOnImageAndPlaceMustache();
+    }
+
+    //CameraListener Overrides ---->
+
+    //Depending on which phone is used the camera sensor is different, thus need to rotate to be viewed correctly by the OpenCV camera.
+    private void rotateImageByCamera(Mat inputFrame){
+
+        Mat transposedImage = inputFrame.t();
+        Mat rotatedImage = new Mat(transposedImage.rows(), transposedImage.cols(), transposedImage.type());
+
+        switch (this.cameraPosition) {
+            case Back:
+
+                if (this.cameraOrientation == 90) {
+
+                    Core.flip(transposedImage, rotatedImage, 1);
+
+                } else if (this.cameraOrientation == 270) {
+
+                    Core.flip(transposedImage, rotatedImage, 0);
+
+                }
+
+                break;
+            case Front:
+
+                if (this.cameraOrientation == 90) {
+
+                    Core.flip(transposedImage, rotatedImage, 1);
+
+                } else if (this.cameraOrientation == 270) {
+
+                    Core.flip(transposedImage, rotatedImage, -1);
+
+                }
+                break;
+        }
+
+        transposedImage.release();
+        rotatedImage.copyTo(this.mCapturedImage);
+        rotatedImage.release();
+
+    }
+
+
+
+    private Mat findFacesOnImageAndPlaceMustache(){
+
+        //Here we can process mCapturedImage if classifier is loaded
+        if(mFaceDetector != null){
+
+            //Find faces in captured image.
+            MatOfRect faceDetections = new MatOfRect();
+            mFaceDetector.detectMultiScale(this.mCapturedImage, faceDetections);
+
+            //Loop through the found faces and add a mustache
+            for(Rect rect: faceDetections.toArray()){
+
+                placeMustache(rect);
+
+            }
+
+        }
+
+        return this.mCapturedImage;
+
+    }
+
+    private void placeMustache(Rect rect){
+
+        int mustacheWidth = rect.width / 4;
+
+        double x1 = rect.x + (double) rect.width / 2 - ((double) mustacheWidth / 2);
+        double x2 = x1 + mustacheWidth;
+        double y1 = rect.y + (double) rect.height - (double) rect.height / 3.5;
+        double y2 = y1 + ((double) mustacheWidth / 20);
+
+        int thickness;
+        if(mustacheWidth < 50){
+            thickness = 1;
+        }
+        else if(mustacheWidth < 80){
+            thickness = 3;
+        }
+        else if(mustacheWidth < 100){
+            thickness = 6;
+        }
+        else{
+            thickness = 10;
+        }
+
+        Imgproc.rectangle(this.mCapturedImage,
+                new Point(x1, y1),
+                new Point(x2, y2),
+                new Scalar(255, 255, 0, 1), thickness
+        );
+
     }
 
     public Constants.CameraPosition getCameraPosition() {
@@ -64,7 +190,31 @@ public class CustomCamera implements CameraBridgeViewBase.CvCameraViewListener {
         this.startCamera();
     }
 
+    public void startCamera() {
+        if (this.cameraView != null && !this.isCameraRunning()) {
+            this.displayView.addView(this.cameraView);
+            this.cameraView.enableView();
+        }
+    }
+
+    public void stopCamera() {
+        if (this.cameraView != null && this.isCameraRunning()) {
+            this.cameraView.disableView();
+            this.displayView.removeView(this.cameraView);
+        }
+    }
+
+    public boolean isCameraRunning() {
+        if (this.cameraView != null) {
+            return this.cameraView.isRunning();
+        }
+
+        return false;
+    }
+
+    //Capture an image of the current mat on the camera and convert it to a Bitmap.
     public Bitmap getCapturedImage() {
+
         Mat tempMat = new Mat(this.mCapturedImage.rows(), this.mCapturedImage.cols(), this.mCapturedImage.type());
         this.mCapturedImage.copyTo(tempMat);
 
@@ -97,109 +247,6 @@ public class CustomCamera implements CameraBridgeViewBase.CvCameraViewListener {
         capturedImageResized.release();
 
         return returnImage;
-    }
-
-    public void startCamera() {
-        if (this.cameraView != null && !this.isCameraRunning()) {
-            this.displayView.addView(this.cameraView);
-            this.cameraView.enableView();
-        }
-    }
-
-    public void stopCamera() {
-        if (this.cameraView != null && this.isCameraRunning()) {
-            this.cameraView.disableView();
-            this.displayView.removeView(this.cameraView);
-        }
-    }
-
-    public boolean isCameraRunning() {
-        if (this.cameraView != null) {
-            return this.cameraView.isRunning();
-        }
-
-        return false;
-    }
-
-    @Override
-    public void onCameraViewStarted(int width, int height) {
-        this.mCapturedImage = new Mat(height, width, CvType.CV_8UC4, Scalar.all(0));
-        this.mGray = new Mat(height, width, CvType.CV_8UC1, Scalar.all(0));
-    }
-
-    @Override
-    public void onCameraViewStopped() {
-        this.mCapturedImage.release();
-        this.mGray.release();
-    }
-
-    @Override
-    public Mat onCameraFrame(Mat inputFrame) {
-
-        switch (this.cameraPosition) {
-            case Back:
-
-                if (this.cameraOrientation == 90) {
-                    Mat transposedImage = inputFrame.t();
-                    Mat rotatedImage = new Mat(transposedImage.rows(), transposedImage.cols(), transposedImage.type());
-                    Core.flip(transposedImage, rotatedImage, 1);
-                    transposedImage.release();
-                    rotatedImage.copyTo(this.mCapturedImage);
-                    rotatedImage.release();
-                } else if (this.cameraOrientation == 270) {
-                    Mat transposedImage = inputFrame.t();
-                    Mat rotatedImage = new Mat(transposedImage.rows(), transposedImage.cols(), transposedImage.type());
-                    Core.flip(transposedImage, rotatedImage, 0);
-                    transposedImage.release();
-                    rotatedImage.copyTo(this.mCapturedImage);
-                    rotatedImage.release();
-                }
-
-                break;
-            case Front:
-
-                if (this.cameraOrientation == 90) {
-                    Mat transposedImage = inputFrame.t();
-                    Mat rotatedImage = new Mat(transposedImage.rows(), transposedImage.cols(), transposedImage.type());
-                    Core.flip(transposedImage, rotatedImage, 1);
-                    transposedImage.release();
-                    rotatedImage.copyTo(this.mCapturedImage);
-                    rotatedImage.release();
-                } else if (this.cameraOrientation == 270) {
-                    Mat transposedImage = inputFrame.t();
-                    Mat rotatedImage = new Mat(transposedImage.rows(), transposedImage.cols(), transposedImage.type());
-                    Core.flip(transposedImage, rotatedImage, -1);
-                    transposedImage.release();
-                    rotatedImage.copyTo(this.mCapturedImage);
-                    rotatedImage.release();
-                }
-                break;
-        }
-
-        //Here we can process mCapturedImage if we want a snapchat like view.
-        if(mFaceDetector != null){
-
-            MatOfRect faceDetections = new MatOfRect();
-            mFaceDetector.detectMultiScale(this.mCapturedImage, faceDetections);
-
-            for(Rect rect: faceDetections.toArray()){
-
-                double x1 = rect.x + (double) rect.width / 2 - 80;
-                double x2 = x1 + 160;
-                double y1 = rect.y + (double) rect.height - (double) rect.height / 3.5;
-                double y2 = y1 + 10;
-
-                Imgproc.rectangle(this.mCapturedImage,
-                        new Point(x1, y1),
-                        new Point(x2, y2),
-                        new Scalar(255, 255, 255, 1), 10
-                );
-
-            }
-
-        }
-
-        return this.mCapturedImage;
     }
 
 

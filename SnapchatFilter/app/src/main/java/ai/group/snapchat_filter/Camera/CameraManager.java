@@ -1,52 +1,32 @@
 package ai.group.snapchat_filter.Camera;
 
-import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.view.ViewGroup;
-
 import org.opencv.objdetect.CascadeClassifier;
-
-import ai.group.snapchat_filter.R;
 import ai.group.snapchat_filter.Utils.Constants;
 
 public class CameraManager {
 
-    private Context mContext;
-
     private boolean backCameraAvailable;
     private boolean frontCameraAvailable;
-
     private int backCameraOrientation;
     private int frontCameraOrientation;
     private Constants.CameraPosition preferredPosition;
-    private ViewGroup displayView;
-
     private CustomCamera camera;
-    private CascadeClassifier mFaceDetector;
 
-    public CameraManager(Context context, ViewGroup view){
-        this.internalInit(context, view, Constants.CameraPosition.Back, null);
+    public CameraManager(ViewGroup view, Constants.CameraPosition cameraPosition, CascadeClassifier faceDetector){
+        this.internalInit(view, cameraPosition, faceDetector);
     }
 
-    public CameraManager(Context context, ViewGroup view, Constants.CameraPosition cameraPosition, CascadeClassifier faceDetector){
-        this.internalInit(context, view, cameraPosition, faceDetector);
-    }
-
-    private void internalInit(Context context, ViewGroup view, Constants.CameraPosition cameraPosition, CascadeClassifier faceDetector){
-
-        //Set context to the current fragment that created the camera manager
-        this.mContext = context;
+    private void internalInit(ViewGroup view, Constants.CameraPosition cameraPosition, CascadeClassifier faceDetector){
 
         //Set view where the camera feed should be displayed
-        this.displayView = view;
 
         //set users preferred position of the camera when booting up
         this.preferredPosition = cameraPosition;
 
         //Set face detection points
-        this.mFaceDetector = faceDetector;
 
         //Search the phone for available devices (eg. back and front camera)
         //Sets the preferred position based on which devices are found
@@ -105,11 +85,10 @@ public class CameraManager {
 
         //create a new camera
         this.camera = new CustomCamera(
-                this.displayView,
+                view,
                 this.preferredPosition == Constants.CameraPosition.Back ? this.backCameraOrientation : this.frontCameraOrientation,
                 this.preferredPosition,
-                true,
-                mFaceDetector
+                faceDetector
                 );
 
     }
@@ -118,18 +97,22 @@ public class CameraManager {
     public boolean backCameraExists(){
         return backCameraAvailable;
     }
+
     public boolean frontCameraExists(){
         return frontCameraAvailable;
     }
+
     public boolean canTurnCamera(){
         return backCameraExists() && frontCameraExists();
     }
+
     public boolean isCameraRunning(){
         return this.camera.isCameraRunning();
     }
-    private void getAvailableCameras(){
-        //loop through all found devices and search for front and back camera
 
+    private void getAvailableCameras(){
+
+        //loop through all found devices and search for front and back camera
         for(int i = 0; i < Camera.getNumberOfCameras(); i++){
             Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
             Camera.getCameraInfo(i, cameraInfo);
@@ -152,6 +135,7 @@ public class CameraManager {
         }
         this.setPreferredPosition(Constants.CameraPosition.Back);
     }
+
     public void startFrontCamera(){
         if(!this.frontCameraAvailable){
             //no front camera available, do nothing
@@ -159,6 +143,7 @@ public class CameraManager {
         }
         this.setPreferredPosition(Constants.CameraPosition.Front);
     }
+
     public void startCamera(){
         if(this.camera.isCameraRunning()){
             //camera is already running, no need to start it
@@ -166,6 +151,7 @@ public class CameraManager {
         }
         this.camera.startCamera();
     }
+
     public void stopCamera(){
         if(!this.camera.isCameraRunning()){
             //camera is not running, no need to send stop to camera
@@ -173,6 +159,7 @@ public class CameraManager {
         }
         this.camera.stopCamera();
     }
+
     public void turnCamera(){
         //get current position of camera
         Constants.CameraPosition currentPosition = this.camera.getCameraPosition();
@@ -193,9 +180,6 @@ public class CameraManager {
     }
 
     //Helpers
-    public Bitmap getCapturedPhoto(){
-        return this.camera.getCapturedImage();
-    }
 
     private void setPreferredPosition(Constants.CameraPosition position){
         //Set the preferred position in camera manager
@@ -205,6 +189,10 @@ public class CameraManager {
         this.camera.setCameraPosition(position, this.preferredPosition == Constants.CameraPosition.Back ? this.backCameraOrientation : this.frontCameraOrientation);
         //Start the camera after setting a preferred position
         this.camera.startCamera();
+    }
+
+    public Bitmap getCapturedPhoto(){
+        return this.camera.getCapturedImage();
     }
 
     public Constants.CameraPosition getPreferredPosition(){

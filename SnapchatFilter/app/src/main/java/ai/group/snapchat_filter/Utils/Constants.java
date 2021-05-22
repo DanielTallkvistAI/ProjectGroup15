@@ -2,6 +2,7 @@ package ai.group.snapchat_filter.Utils;
 
 public final class Constants {
 
+    //Back or Front of the mobile camera.
     public enum CameraPosition{
         Back(-1),
         Front(1);
