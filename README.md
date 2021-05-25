@@ -19,7 +19,7 @@ Required:
 Steps:
 
 1. Download repo.
-2. Open project with Android Studio by selecting build.gradle in SnapchatFilter folder.
+2. Open project with Android Studio by selecting gradle: SnapchatFilter/build.gradle 
 3. Let the gradle build (Install required sdk:s specified above if it fails)
 4. Connect your Android device with USB (description if you haved done it before: https://developer.android.com/studio/debug/dev-options)
 5. Select to debug on your device
